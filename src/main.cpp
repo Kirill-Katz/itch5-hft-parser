@@ -3,7 +3,6 @@
 #include <array>
 #include <cstdint>
 #include <memory.h>
-
 #include "parser.hpp"
 
 inline uint16_t load_be16(const std::byte* p) {
@@ -26,6 +25,14 @@ inline uint64_t load_be48_v2(const std::byte* p) {
     v = __builtin_bswap64(v);
     return v >> 16;
 }
+
+
+class Handler {
+public:
+    void handle(Message msg) {
+        std::cout << (char)msg.type << '\n';
+    }
+};
 
 int main() {
     std::ifstream file("../data/01302019.NASDAQ_ITCH50",
@@ -50,25 +57,26 @@ int main() {
     const std::byte* src = src_buf.data();
     std::byte* dst = dst_buf.data();
 
-    //ItchParser parser;
-    //parser.parse(src, dst, 4096);
+    Handler handler{};
+    ItchParser parser;
+    parser.parse(src, 4096, handler);
 
-    const std::byte* msg = src;
-    uint16_t message_len = load_be16(msg);
-    char message_type = char(msg[2]);
-    uint16_t stock_locate = load_be16(msg + 3);
-    uint16_t tracking_num = load_be16(msg + 5);
-    uint64_t timestamp    = load_be48(msg + 7);
-    uint64_t timestamp2   = load_be48_v2(msg + 7);
-    char event_code       = char(msg[13]);
+    //const std::byte* msg = src;
+    //uint16_t message_len = load_be16(msg);
+    //char message_type = char(msg[2]);
+    //uint16_t stock_locate = load_be16(msg + 3);
+    //uint16_t tracking_num = load_be16(msg + 5);
+    //uint64_t timestamp    = load_be48(msg + 7);
+    //uint64_t timestamp2   = load_be48_v2(msg + 7);
+    //char event_code       = char(msg[13]);
 
-    std::cout << message_len  << "\n";
-    std::cout << message_type << "\n";
-    std::cout << stock_locate << "\n";
-    std::cout << tracking_num << "\n";
-    std::cout << timestamp    << "\n";
-    std::cout << timestamp2   << "\n";
-    std::cout << event_code   << "\n";
+    //std::cout << message_len  << "\n";
+    //std::cout << message_type << "\n";
+    //std::cout << stock_locate << "\n";
+    //std::cout << tracking_num << "\n";
+    //std::cout << timestamp    << "\n";
+    //std::cout << timestamp2   << "\n";
+    //std::cout << event_code   << "\n";
 
     //uint16_t next_message_len = load_be16(msg + message_len + 2);
     //std::cout << next_message_len << "\n";
