@@ -16,7 +16,7 @@ inline uint64_t load_be48_v2(const std::byte* p) {
 
 class Handler {
 public:
-    void handle(Message msg) {
+    void handle(ITCH::Message msg) {
         messages_num++;
     }
 
@@ -51,7 +51,7 @@ int main() {
     const std::byte* src = src_buf.data();
 
     Handler handler{};
-    ItchParser parser;
+    ITCH::ItchParser parser;
     parser.parse(src, 1 * 1024 * 1024 * 1024, handler);
 
     std::cout << handler.messages_num << '\n';

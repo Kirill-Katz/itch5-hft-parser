@@ -7,13 +7,13 @@
 #include "parser.hpp"
 
 __attribute__((noinline))
-Message call_parse(ItchParser& parser, const std::byte* src) {
+ITCH::Message call_parse(ITCH::ItchParser& parser, const std::byte* src) {
     return parser.parseMsg(src);
 }
 
 class Handler {
 public:
-    void handle(Message msg) {
+    void handle(ITCH::Message msg) {
         messages_num++;
     }
 
@@ -44,14 +44,13 @@ static const std::vector<std::byte>& first_chunk()
 
 static void BM_ParseMsg(benchmark::State& state) {
     static const std::vector<std::byte> buf = first_chunk();
-    ItchParser parser;
+    ITCH::ItchParser parser;
 
     const std::byte* vsrc = buf.data();
-
-    MessageType last_type = MessageType::SYSTEM_EVENT;
+    ITCH::MessageType last_type = ITCH::MessageType::SYSTEM_EVENT;
 
     for (auto _ : state) {
-        auto msg = call_parse(parser, vsrc);
+        auto msg =  parser.parseMsg(vsrc);
         benchmark::DoNotOptimize(msg);
         last_type = msg.type;
     }
@@ -82,7 +81,7 @@ static void BM_Parse(benchmark::State& state) {
 
     const std::byte* src = src_buf.data();
 
-    ItchParser parser;
+    ITCH::ItchParser parser;
     for (auto _ : state) {
         Handler handler{};
         parser.parse(src, 1 * 1024 * 1024 * 1024, handler);

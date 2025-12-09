@@ -1,0 +1,26 @@
+[
+{
+  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser",
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -DNDEBUG -std=gnu++20 -g -fno-omit-frame-pointer -o CMakeFiles/parser_bench.dir/benchmark/main.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/benchmark/main.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/benchmark/main.cpp",
+  "output": "CMakeFiles/parser_bench.dir/benchmark/main.cpp.o"
+},
+{
+  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser",
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -DNDEBUG -std=gnu++20 -g -fno-omit-frame-pointer -o CMakeFiles/parser_bench.dir/benchmark/bm_parser.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/benchmark/bm_parser.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/benchmark/bm_parser.cpp",
+  "output": "CMakeFiles/parser_bench.dir/benchmark/bm_parser.cpp.o"
+},
+{
+  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser",
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -DNDEBUG -std=gnu++20 -g -fno-omit-frame-pointer -o CMakeFiles/parser_bench.dir/benchmark/bm_ops.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/benchmark/bm_ops.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/benchmark/bm_ops.cpp",
+  "output": "CMakeFiles/parser_bench.dir/benchmark/bm_ops.cpp.o"
+},
+{
+  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser",
+  "command": "/usr/lib/ccache/c++  -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -DNDEBUG -std=gnu++20 -g -fno-omit-frame-pointer -o CMakeFiles/test.dir/src/main.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/main.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/src/main.cpp",
+  "output": "CMakeFiles/test.dir/src/main.cpp.o"
+}
+]

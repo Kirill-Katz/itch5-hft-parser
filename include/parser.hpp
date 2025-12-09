@@ -6,6 +6,8 @@
 #include <string>
 #include <stdexcept>
 
+namespace ITCH {
+
 enum class MessageType {
     SYSTEM_EVENT                = 'S',
     STOCK_DIRECTORY             = 'R',
@@ -937,4 +939,6 @@ void ItchParser::parse(std::byte const *  src, size_t len, Handler& handler) {
 
         src += msg.size + 2;
     }
+}
+
 }
