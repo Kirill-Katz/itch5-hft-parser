@@ -1,8 +1,10 @@
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
 #include <vector>
 #include <cstdint>
 #include <memory.h>
+#include <chrono>
 #include "parser.hpp"
 
 inline uint64_t load_be48_v2(const std::byte* p) {
@@ -17,10 +19,11 @@ inline uint64_t load_be48_v2(const std::byte* p) {
 class Handler {
 public:
     void handle(ITCH::Message msg) {
-        std::cout << char(msg.type) << '\n';
         messages_num++;
+        perCategory[msg.type]++;
     }
 
+    std::unordered_map<ITCH::MessageType, int> perCategory;
     long long messages_num = 0;
 };
 
@@ -48,9 +51,33 @@ int main() {
 
     Handler handler{};
     ITCH::ItchParser parser;
-    parser.parse(src, 1 * 1024 * 1024 * 1024, handler);
+    size_t len = 1ull * 1024 * 1024 * 1024;
 
-    std::cout << handler.messages_num << '\n';
+    using clock = std::chrono::high_resolution_clock;
+
+    auto start = clock::now();
+
+    parser.parse(src, len, handler);
+
+    auto end = clock::now();
+
+    uint64_t msgs = handler.messages_num;
+
+    double seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+
+    double throughput_msgs_per_sec = msgs / seconds;
+    double avg_ns_per_msg = (seconds * 1e9) / msgs;
+
+    for (auto& [key, value] : handler.perCategory) {
+        std::cout << char(key) << ' ' << value << '\n';
+    }
+
+    std::cout << "Messages:        " << msgs << "\n";
+    std::cout << "Seconds:         " << seconds << "\n";
+    std::cout << "Throughput:      " << throughput_msgs_per_sec << " msg/s\n";
+    std::cout << "Average latency: " << avg_ns_per_msg << " ns/msg\n";
 
     return 0;
+
 }

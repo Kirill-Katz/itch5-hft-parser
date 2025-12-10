@@ -8,7 +8,6 @@
 
 namespace ITCH {
 
-
 enum class MessageType {
     SYSTEM_EVENT                = 'S',
     STOCK_DIRECTORY             = 'R',
@@ -328,6 +327,10 @@ class ItchParser {
 public:
     template <typename Handler>
     void parse(std::byte const *  src, size_t len, Handler& handler);
+
+    template <typename SpecificHandler>
+    void parseSpecific(std::byte const * src, size_t len, SpecificHandler& handler);
+
     Message parseMsg(std::byte const * src);
 };
 
@@ -852,7 +855,6 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
     msg.type = type;
     msg.size = size;
 
-
     switch (type) {
     #define X(NAME, SUFFIX) \
         case MessageType::NAME: { \
@@ -870,7 +872,41 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
     return msg;
 }
 
-//template<typename SpecificHandler>
+template<typename SpecificHandler>
+void ItchParser::parseSpecific(std::byte const * src, size_t len, SpecificHandler& handler) {
+    std::byte const * end = src + len;
+
+    while (end - src >= 3) {
+        uint16_t size = load_be16(src);
+        if (end - src < 2 + size) {
+            break;
+        }
+
+        auto raw_type = char(src[0]);
+        MessageType type = static_cast<MessageType>(raw_type);
+        src += 1;
+
+        Message msg{};
+        msg.type = type;
+        msg.size = size;
+
+        switch (type) {
+        #define X(NAME, SUFFIX) \
+            case MessageType::NAME: { \
+                SUFFIX m = parse##SUFFIX(src); \
+                handler.handler##SUFFIX(m); \
+                break; \
+            }
+
+            ITCH_MESSAGE_LIST(X)
+
+            default:
+                throw std::runtime_error("Unknown message type: " + std::to_string(raw_type));
+        #undef X
+        }
+        src += msg.size + 2;
+    }
+}
 
 template <typename Handler>
 void ItchParser::parse(std::byte const *  src, size_t len, Handler& handler) {
