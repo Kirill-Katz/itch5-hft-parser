@@ -91,12 +91,10 @@ inline uint64_t load_be<uint64_t>(const std::byte* p) {
 }
 
 inline uint64_t load_be(const std::byte* p, be48 encoding) {
-    return (uint64_t(p[0]) << 40) |
-           (uint64_t(p[1]) << 32) |
-           (uint64_t(p[2]) << 24) |
-           (uint64_t(p[3]) << 16) |
-           (uint64_t(p[4]) << 8)  |
-           uint64_t(p[5]);
+    uint64_t x;
+    __builtin_memcpy(&x, p, 8);
+    x = __builtin_bswap64(x);
+    return x & 0x0000FFFFFFFFFFFFULL;
 }
 
 template<typename Msg, auto Member>
@@ -130,6 +128,7 @@ requires (!std::is_array_v<member_type_t<Member>>)
 }
 
 template<typename Layout, typename Msg, size_t... I>
+__attribute__((hot))
 inline void parse_impl(
     Msg& m,
     const std::byte* src,
@@ -146,8 +145,9 @@ inline void parse_impl(
 }
 
 template<typename Layout, typename Msg>
-inline Msg parse_msg(const std::byte* src) {
-    Msg m{};
+__attribute__((hot))
+inline Msg parse_itch(const std::byte* src) {
+    Msg m;
     parse_impl<Layout, Msg>(
         m,
         src,
@@ -709,16 +709,20 @@ public:
     void parse(std::byte const *  src, size_t len, Handler& handler);
 
     template <typename SpecificHandler>
-    void parseSpecific(std::byte const * src, size_t len, SpecificHandler& handler);
+    void parse_specific(std::byte const * src, size_t len, SpecificHandler& handler);
 
-    Message parseMsg(std::byte const * src);
+    Message parse_msg(std::byte const * src);
 };
 
 inline uint16_t load_be16(const std::byte* p) {
     return (uint16_t(p[0]) << 8) | uint16_t(p[1]);
 }
 
-inline Message ItchParser::parseMsg(std::byte const * src) {
+[[gnu::noinline]] static void bad_type(char t) {
+    throw std::runtime_error("Unknown message type: " + std::to_string(t));
+}
+
+inline Message ItchParser::parse_msg(std::byte const * src) {
     uint16_t size = load_be16(src);
     src += 2;
 
@@ -733,8 +737,7 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
     switch (type) {
     #define X(NAME, TYPE, FIELD) \
         case MessageType::NAME: { \
-            auto m = parse_msg<TYPE##Layout, TYPE>(src); \
-            msg.FIELD = m; \
+            msg.FIELD = parse_itch<TYPE##Layout, TYPE>(src); \
             asm volatile("" : : "r,m"(msg.FIELD)); \
             return msg; \
         }
@@ -742,7 +745,7 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
         ITCH_MESSAGE_LIST(X)
 
         default:
-            throw std::runtime_error("Unknown message type: " + std::to_string(raw_type));
+            bad_type(raw_type);
     #undef X
     }
 
@@ -750,7 +753,7 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
 }
 
 template<typename SpecificHandler>
-void ItchParser::parseSpecific(std::byte const * src, size_t len, SpecificHandler& handler) {
+void ItchParser::parse_specific(std::byte const * src, size_t len, SpecificHandler& handler) {
     std::byte const * end = src + len;
 
     while (end - src >= 3) {
@@ -758,19 +761,16 @@ void ItchParser::parseSpecific(std::byte const * src, size_t len, SpecificHandle
         if (end - src < 2 + size) {
             break;
         }
+        src += 2;
 
         auto raw_type = char(src[0]);
         MessageType type = static_cast<MessageType>(raw_type);
         src += 1;
 
-        Message msg{};
-        msg.type = type;
-        msg.size = size;
-
         switch (type) {
         #define X(NAME, TYPE, FIELD) \
             case MessageType::NAME: { \
-                auto m = parse_msg<TYPE##Layout, TYPE>(src); \
+                auto m = parse_itch<TYPE##Layout, TYPE>(src); \
                 handler.handle##TYPE(m); \
                 break; \
             }
@@ -778,11 +778,11 @@ void ItchParser::parseSpecific(std::byte const * src, size_t len, SpecificHandle
             ITCH_MESSAGE_LIST(X)
 
             default:
-                throw std::runtime_error("Unknown message type: " + std::to_string(raw_type));
+                bad_type(raw_type);
         #undef X
         }
 
-        src += msg.size + 2;
+        src += size - 1;
     }
 }
 
@@ -796,7 +796,7 @@ void ItchParser::parse(std::byte const *  src, size_t len, Handler& handler) {
             break;
         }
 
-        Message msg = parseMsg(src);
+        Message msg = parse_msg(src);
         handler.handle(msg);
 
         src += msg.size + 2;

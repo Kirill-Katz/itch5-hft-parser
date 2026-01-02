@@ -329,9 +329,9 @@ public:
     void parse(std::byte const *  src, size_t len, Handler& handler);
 
     template <typename SpecificHandler>
-    void parseSpecific(std::byte const * src, size_t len, SpecificHandler& handler);
+    void parse_specific(std::byte const * src, size_t len, SpecificHandler& handler);
 
-    Message parseMsg(std::byte const * src);
+    Message parse_msg(std::byte const * src);
 };
 
 inline uint64_t load_be48(const std::byte* p) {
@@ -842,7 +842,11 @@ inline DirectListingCapitalRaise parseDirectListingCapitalRaise(std::byte const 
     return directListingCapitalRaise;
 }
 
-inline Message ItchParser::parseMsg(std::byte const * src) {
+[[gnu::noinline, gnu::cold]] static void bad_type(char t) {
+    throw std::runtime_error("Unknown message type: " + std::to_string(t));
+}
+
+inline Message ItchParser::parse_msg(std::byte const * src) {
     uint16_t size = load_be16(src);
     src += 2;
 
@@ -865,7 +869,7 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
         ITCH_MESSAGE_LIST(X)
 
         default:
-            throw std::runtime_error("Unknown message type: " + std::to_string(raw_type));
+            bad_type(raw_type);
     #undef X
     }
 
@@ -873,7 +877,7 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
 }
 
 template<typename SpecificHandler>
-void ItchParser::parseSpecific(std::byte const * src, size_t len, SpecificHandler& handler) {
+void ItchParser::parse_specific(std::byte const * src, size_t len, SpecificHandler& handler) {
     std::byte const * end = src + len;
 
     while (end - src >= 3) {
@@ -881,30 +885,28 @@ void ItchParser::parseSpecific(std::byte const * src, size_t len, SpecificHandle
         if (end - src < 2 + size) {
             break;
         }
+        src += 2;
 
         auto raw_type = char(src[0]);
         MessageType type = static_cast<MessageType>(raw_type);
         src += 1;
 
-        Message msg{};
-        msg.type = type;
-        msg.size = size;
-
         switch (type) {
         #define X(NAME, TYPE, FIELD) \
             case MessageType::NAME: { \
                 auto m = parse##TYPE(src); \
-                handler.handle##TYPE(m); \
+                handler.handle_##FIELD(m); \
                 break; \
             }
 
             ITCH_MESSAGE_LIST(X)
 
             default:
-                throw std::runtime_error("Unknown message type: " + std::to_string(raw_type));
+                bad_type(raw_type);
         #undef X
         }
-        src += msg.size + 2;
+
+        src += size - 1;
     }
 }
 
@@ -918,7 +920,7 @@ void ItchParser::parse(std::byte const *  src, size_t len, Handler& handler) {
             break;
         }
 
-        Message msg = parseMsg(src);
+        Message msg = parse_msg(src);
         handler.handle(msg);
 
         src += msg.size + 2;

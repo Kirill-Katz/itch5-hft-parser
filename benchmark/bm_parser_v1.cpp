@@ -11,24 +11,23 @@ struct HandlerV1 {
 };
 
 static void BM_Parse_v1(benchmark::State& state) {
-    static std::vector<std::byte> buf = load_chunk(4 * 4096);
+    static std::vector<std::byte> buf = load_chunk(3 * 1024 * 1024);
 
     ITCHv1::ItchParser parser;
     uint64_t messages = 0;
 
     for (auto _ : state) {
         HandlerV1 handler{};
-        parser.parse(buf.data(), buf.size(), handler);
-        messages += handler.messages;
-        benchmark::DoNotOptimize(handler.messages);
+        ITCHv1::Message msg = parser.parse_msg(buf.data());
+        benchmark::DoNotOptimize(msg);
     }
 
-    state.counters["msg/s"] =
-        benchmark::Counter(messages, benchmark::Counter::kIsRate);
+    //state.counters["msg/s"] =
+    //    benchmark::Counter(messages, benchmark::Counter::kIsRate);
 
-    state.counters["ns/msg"] =
-    benchmark::Counter(double(messages) / 1e9,
-                       benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+    //state.counters["ns/msg"] =
+    //benchmark::Counter(double(messages) / 1e9,
+    //                   benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 }
 
 BENCHMARK(BM_Parse_v1);
