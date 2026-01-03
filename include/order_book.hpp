@@ -1,90 +1,9 @@
 #pragma once
 #include <cstdint>
-#include <iostream>
-#include <unordered_map>
-#include <vector>
+#include <absl/container/flat_hash_map.h>
+#include "order_book_shared.hpp"
 
 namespace OB {
-
-struct Level {
-    uint64_t price;
-    uint64_t qty;
-};
-
-enum class Side {
-    Bid = 'B',
-    Ask = 'S'
-};
-
-template<Side S>
-class VectorLevel {
-public:
-    VectorLevel() {
-        levels.reserve(3000);
-    }
-
-    void remove(Level level);
-    void add(Level level);
-    Level best() const;
-
-    std::vector<Level> levels;
-};
-
-[[gnu::noinline]] static void UNEXPECTED(bool condition, std::string message) {
-    if (condition) {
-        std::cerr << message << '\n';
-        std::abort();
-    }
-}
-
-template<Side S>
-inline Level VectorLevel<S>::best() const {
-    return levels.back();
-}
-
-template<Side S>
-inline void VectorLevel<S>::remove(Level level) {
-    auto rit = std::ranges::find_if(
-        levels.rbegin(), levels.rend(),
-        [price = level.price](const Level& p) {
-            return p.price == price;
-        }
-    );
-
-    UNEXPECTED(rit == levels.rend(), "Remove didn't find a level");
-    UNEXPECTED(level.qty > rit->qty, "Remove lead to an underflow for level");
-
-    rit->qty -= level.qty;
-    if (rit->qty == 0) {
-        levels.erase(std::next(rit).base());
-    }
-}
-
-template<Side S>
-inline void VectorLevel<S>::add(Level level) {
-    auto rit = std::ranges::find_if(
-        levels.rbegin(), levels.rend(),
-        [price = level.price](const Level& p) {
-            if constexpr (S == Side::Bid) {
-                return p.price <= price;
-            } else {
-                return p.price >= price;
-            }
-        }
-    );
-
-    if (rit != levels.rend() && rit->price == level.price) {
-        rit->qty += level.qty;
-    } else {
-        levels.insert(rit.base(), level);
-    }
-}
-
-struct Order {
-    uint32_t qty;
-    uint32_t price;
-    Side side;
-};
 
 template<template<Side> typename Levels>
 class OrderBook {
@@ -98,7 +17,7 @@ public:
     Level best_bid() const;
     Level best_ask() const;
 
-    std::unordered_map<uint64_t, Order> orders_map;
+    absl::flat_hash_map<uint64_t, Order> orders_map;
     Levels<Side::Bid> bid_levels;
     Levels<Side::Ask> ask_levels;
 };

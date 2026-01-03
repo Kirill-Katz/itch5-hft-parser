@@ -187,28 +187,28 @@ enum class MessageType {
 };
 
 #define ITCH_MESSAGE_LIST(X) \
-    X(SYSTEM_EVENT,                 SystemEvent,                 system_event) \
-    X(STOCK_DIRECTORY,              StockDirectory,              stock_directory) \
-    X(STOCK_TRADING_ACTION,         TradingAction,               trading_action) \
-    X(REG_SHO,                      RegSho,                      reg_sho) \
-    X(MARKET_PARTICIPANT_POSITION,  MarketParticipantPos,        market_participant_pos) \
-    X(MWCB_DECLINE_LEVEL_MESSAGE,   MwcbDeclineLevel,            mwcb_decline_level) \
-    X(MWCB_STATUS_MESSAGE,          MwcbStatus,                  mwcb_status) \
-    X(IPO_QUOTING_PERIOD_UPD,       IpoQuotationPeriodUpd,       ipo_quotation_period_upd) \
-    X(LULD_AUCTION_COLLAR,          LuldAuctionCollar,           luld_auction_collar) \
-    X(OPERATIONAL_HALT,             OperationalHalt,             operational_halt) \
-    X(ADD_ORDER_NO_MPID,            AddOrderNoMpid,              add_order_no_mpid) \
-    X(ADD_ORDER_MPID,               AddOrderMpid,                add_order_mpid) \
-    X(ORDER_EXECUTED,               OrderExecuted,               order_executed) \
-    X(ORDER_EXECUTED_PRICE,         OrderExecutedPrice,          order_executed_price) \
-    X(ORDER_CANCEL,                 OrderCancel,                 order_cancel) \
-    X(ORDER_DELETE,                 OrderDelete,                 order_delete) \
-    X(ORDER_REPLACE,                OrderReplace,                order_replace) \
-    X(NON_CROSS_TRADE_MSG,          TradeMessageNonCross,        trade_msg_non_cross) \
-    X(CROSS_TRADE_MSG,              TradeMessageCross,           trade_msg_cross) \
-    X(BROKEN_TRADE_MSG,             BrokenTrade,                 broken_trade) \
-    X(NOII_MSG,                     Noii,                        noii) \
-    X(DIRECT_LISTING_CAPITAL_RAISE, DirectListingCapitalRaise,   direct_listing_capital_raise)
+    X(SYSTEM_EVENT,                 SystemEvent,                 system_event,                  unlikely) \
+    X(STOCK_DIRECTORY,              StockDirectory,              stock_directory,               unlikely) \
+    X(STOCK_TRADING_ACTION,         TradingAction,               trading_action,                unlikely) \
+    X(REG_SHO,                      RegSho,                      reg_sho,                       unlikely) \
+    X(MARKET_PARTICIPANT_POSITION,  MarketParticipantPos,        market_participant_pos,        unlikely) \
+    X(MWCB_DECLINE_LEVEL_MESSAGE,   MwcbDeclineLevel,            mwcb_decline_level,            unlikely) \
+    X(MWCB_STATUS_MESSAGE,          MwcbStatus,                  mwcb_status,                   unlikely) \
+    X(IPO_QUOTING_PERIOD_UPD,       IpoQuotationPeriodUpd,       ipo_quotation_period_upd,      unlikely) \
+    X(LULD_AUCTION_COLLAR,          LuldAuctionCollar,           luld_auction_collar,           unlikely) \
+    X(OPERATIONAL_HALT,             OperationalHalt,             operational_halt,              unlikely) \
+    X(ADD_ORDER_NO_MPID,            AddOrderNoMpid,              add_order_no_mpid,             likely) \
+    X(ADD_ORDER_MPID,               AddOrderMpid,                add_order_mpid,                likely) \
+    X(ORDER_EXECUTED,               OrderExecuted,               order_executed,                likely) \
+    X(ORDER_EXECUTED_PRICE,         OrderExecutedPrice,          order_executed_price,          likely) \
+    X(ORDER_CANCEL,                 OrderCancel,                 order_cancel,                  likely) \
+    X(ORDER_DELETE,                 OrderDelete,                 order_delete,                  likely) \
+    X(ORDER_REPLACE,                OrderReplace,                order_replace,                 likely) \
+    X(NON_CROSS_TRADE_MSG,          TradeMessageNonCross,        trade_msg_non_cross,           unlikely) \
+    X(CROSS_TRADE_MSG,              TradeMessageCross,           trade_msg_cross,               unlikely) \
+    X(BROKEN_TRADE_MSG,             BrokenTrade,                 broken_trade,                  unlikely) \
+    X(NOII_MSG,                     Noii,                        noii,                          unlikely) \
+    X(DIRECT_LISTING_CAPITAL_RAISE, DirectListingCapitalRaise,   direct_listing_capital_raise,  unlikely)
 
 struct SystemEvent {
     uint16_t stock_locate;
@@ -735,12 +735,14 @@ inline Message ItchParser::parse_msg(std::byte const * src) {
     msg.size = size;
 
     switch (type) {
-    #define X(NAME, TYPE, FIELD) \
-        case MessageType::NAME: { \
+    #define X(NAME, TYPE, FIELD, LIKELINESS) \
+        case MessageType::NAME: \
+        [[LIKELINESS]] \
+        { \
             msg.FIELD = parse_itch<TYPE##Layout, TYPE>(src); \
             asm volatile("" : : "r,m"(msg.FIELD)); \
             return msg; \
-        }
+        } \
 
         ITCH_MESSAGE_LIST(X)
 
@@ -768,12 +770,16 @@ void ItchParser::parse_specific(std::byte const * src, size_t len, SpecificHandl
         src += 1;
 
         switch (type) {
-        #define X(NAME, TYPE, FIELD) \
-            case MessageType::NAME: { \
+        #define X(NAME, TYPE, FIELD, LIKELINESS) \
+            case MessageType::NAME: \
+            [[LIKELINESS]] \
+            { \
+                handler.handle_before(); \
                 auto m = parse_itch<TYPE##Layout, TYPE>(src); \
-                handler.handle##TYPE(m); \
+                handler.handle_##FIELD(m); \
+                handler.handle_after(); \
                 break; \
-            }
+            } \
 
             ITCH_MESSAGE_LIST(X)
 

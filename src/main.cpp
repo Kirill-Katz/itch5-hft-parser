@@ -7,10 +7,12 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <papi.h>
 #include <unistd.h>
 
 #include "parser_v1.hpp"
-#include "order_book.hpp"
+#include "parser_v2.hpp"
+#include "array_level.hpp"
 #include "order_book_handler_single.hpp"
 
 struct CounterHandler {
@@ -95,18 +97,18 @@ pid_t run_perf() {
         execlp(
             "perf",
             "perf",
-            "stat",
-            "-p",
-            pidbuf,
+            "record",
+            "-p", pidbuf,
             nullptr
         );
+
         _exit(127);
     }
 
     return pid;
 }
 
-void print_order_book(OB::OrderBook<OB::VectorLevel> order_book) {
+void print_order_book(OB::OrderBook<OB::ArrayLevel> order_book) {
     std::cout << "====== Bid ======" << '\n';
     for (auto bid : order_book.bid_levels.levels) {
         std::cout << bid.price << ' ' << bid.qty << '\n';
@@ -121,7 +123,7 @@ void print_order_book(OB::OrderBook<OB::VectorLevel> order_book) {
 }
 
 void export_latency_distribution_csv(
-    const std::unordered_map<uint64_t, uint64_t>& latency_distribution
+    const absl::flat_hash_map<uint64_t, uint64_t>& latency_distribution
 ) {
     std::vector<std::pair<uint64_t, uint64_t>> data;
     data.reserve(latency_distribution.size());
@@ -157,17 +159,16 @@ int main() {
     const std::byte* src = src_buf.data();
     size_t len = bytes_read;
 
-    //pid_t perf_pid = run_perf();
     ITCHv1::ItchParser parser_v1;
     CounterHandler h1;
     run_one("ITCH v1", parser_v1, h1, src, len);
 
-    using clock = std::chrono::high_resolution_clock;
+    pid_t perf_pid = run_perf();
 
+    ITCHv2::ItchParser parser_v2;
     OrderBookHandlerSingle obHandler;
-    parser_v1.parse_specific(src, len, obHandler);
+    parser_v2.parse_specific(src, len, obHandler);
     export_latency_distribution_csv(obHandler.latency_distribution);
 
     return 0;
 }
-
