@@ -1,5 +1,5 @@
 # General 
-This is an ITCH parser with updates a custom order book implementations. The results can be seen below.
+This is an ITCH parser which updates a custom order book implementations. The results can be seen below.
 
 # Results
 
