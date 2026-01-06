@@ -4,8 +4,8 @@ This is an ITCH parser which updates a custom order book implementations. The re
 # Results
 
 ### Order Book + ITCH parsing (with high priority messages) Latency Distribution 
+<img width="2605" height="1638" alt="latency_distribution" src="https://github.com/user-attachments/assets/b9f04304-b6b9-4ce2-8791-8d6ed092c191" />
 
-<img width="2578" height="1638" alt="latency_distribution" src="https://github.com/user-attachments/assets/dd8a84a3-b724-4362-8a38-d2840ddecbf5" />
 
 ### Order Book + ITCH parsing (without high priority messages) Latency Distribution 
 <img width="2578" height="1638" alt="latency_distribution_no_high_prio" src="https://github.com/user-attachments/assets/dce68999-5b16-40ff-9279-fe81b87a5641" />
