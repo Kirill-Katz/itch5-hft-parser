@@ -64,6 +64,6 @@ The results were obtained on a pinned p-core of an i7-12700h CPU using `taskset 
 
 
 ### ITCH parsing Latency Distribution
-<img width="3000" height="1800" alt="parsing_lantecy_distribution" src="https://github.com/user-attachments/assets/c10d683f-3ff1-414b-b4f1-08fbfa188591" />
+<img width="3000" height="1800" alt="parsing_lantecy_distribution" src="https://github.com/user-attachments/assets/82497778-c3b8-466d-a183-7fbc7ff3ca8e" />
 
 
