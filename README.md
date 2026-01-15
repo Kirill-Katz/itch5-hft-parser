@@ -1,7 +1,5 @@
 # General 
-This is an ITCH parser which updates a custom order book implementations. Latency results can be seen below.
-The spikes every 3ns are caused by the use or rdtspc instruction to measure latency, which on my laptop yields
-to around 0.3 cycle per ns.
+This is an ITCH parser which updates a custom order book implementations. Latency results as well as installation and analysis steps can be seen below.
 
 # How to use? 
 ### The ITCH 5.0 parser
