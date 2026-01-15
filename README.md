@@ -28,14 +28,20 @@ sudo apt install libabsl-dev
 sudo apt install libbenchmark-dev
 ```
 
-Then build and run like this: 
+Then build like this: 
 ```
 mkdir build
 cd build
 cmake ..
 make
-./benchmark [path to the ITCH file] [results directory]
 ```
+If you want to get the .csv files with latency numbers and recorded best bids then run this:
+
+```./benchmark [path to the ITCH file] [results directory]```
+
+If you want to run it in perf mode (latency is NOT recorded to have as little data pollution as possible) then run this:
+
+```./perf_benc [path to the ITCH file] [results directory]```
 
 # How to analyze?
 First install matplotlib by running:
@@ -48,7 +54,6 @@ To analyze the latency you have to run the `analysis/plot_latency_distribution.p
 python plot_latency_distribution.py [input directory] [output directory]
 python plot_prices.py [path to prices.csv] [output png file]
 ```
-You can also analyze the benchmarks using perf by uncommenting the 3 lines in `int main()`, but make sure you remove the timing code from the benchmark handlers so that the perf is not poluted with almost perfectly predicted brances from the timing code.
 
 # Where to get the ITCH file? 
 The ITCH file can be downloaded here: https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/. For my tests I downloaded the 01302019.NASDAQ_ITCH50 file. Be aware that an ITCH file take around 10Gb.
