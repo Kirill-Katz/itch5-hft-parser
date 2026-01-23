@@ -130,21 +130,6 @@ int main(int argc, char** argv) {
     uint64_t hz = rte_get_timer_hz();
     size_t total_size = 0;
 
-    constexpr size_t W = 8192*2;
-    struct Slot {
-        bool                   present = false;
-        uint16_t               msg_count = 0;
-        std::vector<std::byte> data{};
-    };
-
-    std::array<Slot, W> reorder_ring{};
-    uint64_t expected_seq = 0;
-    size_t base = 0;
-
-    uint64_t lost_packet = -1;
-    uint64_t prev = -1;
-
-    std::cout << "Here" << '\n';
     while (true) {
         uint16_t n = rte_eth_rx_burst(port_id, 0, bufs, 512);
         for (int i = 0; i < n; ++i) {
@@ -182,45 +167,6 @@ int main(int argc, char** argv) {
 
             out.write(reinterpret_cast<char*>(p), itch_len);
             out.flush();
-
-            //prev = seq;
-            //if (seq < expected_seq) {
-            //    std::cout << "Packet dropped (duplicate seq)" << '\n';
-            //    rte_pktmbuf_free(bufs[i]);
-            //    continue;
-            //}
-
-            //if (seq >= expected_seq + W) {
-            //    std::cout << "Packet dropped (window out of memory)" << '\n';
-            //    std::cout << expected_seq << ' ' << seq << '\n';
-            //    std::abort();
-            //}
-
-            //size_t offset = seq - expected_seq;
-            //size_t idx = (base + offset) % W;
-
-            //if (!reorder_ring[idx].present) {
-            //    reorder_ring[idx].data.assign(p, p + itch_len);
-            //    reorder_ring[idx].present = true;
-            //} else {
-            //    rte_pktmbuf_free(bufs[i]);
-            //    continue;
-            //}
-
-            //while (reorder_ring[base].present) {
-            //    auto& data_vec = reorder_ring[base].data;
-            //    out.write(
-            //        reinterpret_cast<const char*>(data_vec.data()),
-            //        data_vec.size()
-            //    );
-
-            //    reorder_ring[base].data.clear();
-            //    reorder_ring[base].present = false;
-            //    reorder_ring[base].msg_count = 0;
-
-            //    expected_seq++;
-            //    base = (base + 1) % W;
-            //}
 
             total_size += itch_len;
             rte_pktmbuf_free(bufs[i]);
