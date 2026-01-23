@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
         throw std::runtime_error("Specify a vdev device");
     }
 
-    uint16_t port_id = 0;
+    uint16_t port_id = 1;
     rte_mempool* pool = rte_pktmbuf_pool_create(
         "mbuf_pool",
         8192,
@@ -68,33 +68,38 @@ int main(int argc, char** argv) {
         throw std::runtime_error("mempool creation failed\n");
     }
 
-    rte_eth_dev_info dev_info;
-    if (rte_eth_dev_info_get(port_id, &dev_info) != 0)
-        throw std::runtime_error("dev info failed");
+    auto init_port = [&](uint16_t port_id) {
+        rte_eth_dev_info dev_info;
+        if (rte_eth_dev_info_get(port_id, &dev_info) != 0)
+            throw std::runtime_error("dev info failed");
 
-    rte_eth_conf conf{};
-    conf.txmode.offloads = 0;
-    conf.rxmode.offloads = 0;
+        rte_eth_conf conf{};
+        conf.txmode.offloads = 0;
+        conf.rxmode.offloads = 0;
 
-    if (rte_eth_dev_configure(port_id, 1, 1, &conf) < 0)
-        throw std::runtime_error("dev configure failed");
+        if (rte_eth_dev_configure(port_id, 1, 1, &conf) < 0)
+            throw std::runtime_error("dev configure failed");
 
-    rte_eth_txconf txconf = dev_info.default_txconf;
-    txconf.offloads = 0;
+        rte_eth_txconf txconf = dev_info.default_txconf;
+        txconf.offloads = 0;
 
-    rte_eth_rxconf rxconf = dev_info.default_rxconf;
-    rxconf.offloads = 0;
+        rte_eth_rxconf rxconf = dev_info.default_rxconf;
+        rxconf.offloads = 0;
 
-    if (rte_eth_tx_queue_setup(port_id, 0, 1024,
-                               rte_socket_id(), &txconf) != 0)
-        throw std::runtime_error("tx queue failed");
+        if (rte_eth_tx_queue_setup(port_id, 0, 1024,
+                                   rte_socket_id(), &txconf) != 0)
+            throw std::runtime_error("tx queue failed");
 
-    if (rte_eth_rx_queue_setup(port_id, 0, 1024,
-                               rte_socket_id(), &rxconf, pool) != 0)
-        throw std::runtime_error("rx queue failed");
+        if (rte_eth_rx_queue_setup(port_id, 0, 1024,
+                                   rte_socket_id(), &rxconf, pool) != 0)
+            throw std::runtime_error("rx queue failed");
 
-    if (rte_eth_dev_start(port_id) < 0)
-        throw std::runtime_error("dev start failed");
+        if (rte_eth_dev_start(port_id) < 0)
+            throw std::runtime_error("dev start failed");
+    };
+
+    init_port(0);
+    init_port(1);
 
     argc -= eal_argc;
     argv += eal_argc;
@@ -144,7 +149,6 @@ int main(int argc, char** argv) {
     uint64_t lost_packet = -1;
     uint64_t prev = -1;
 
-    std::cout << "Here" << '\n';
     while (true) {
         uint16_t n = rte_eth_rx_burst(port_id, 0, bufs, 512);
         for (int i = 0; i < n; ++i) {
@@ -180,47 +184,49 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("Something went wrong, pkt length doesn't match expected length");
             }
 
-            out.write(reinterpret_cast<char*>(p), itch_len);
-            out.flush();
+            prev = seq;
+            if (seq < expected_seq) {
+                std::cout << "Packet dropped (duplicate seq)" << '\n';
+                rte_pktmbuf_free(bufs[i]);
+                continue;
+            }
 
-            //prev = seq;
-            //if (seq < expected_seq) {
-            //    std::cout << "Packet dropped (duplicate seq)" << '\n';
-            //    rte_pktmbuf_free(bufs[i]);
-            //    continue;
-            //}
+            if (seq >= expected_seq + W) {
+                std::cout << "Packet dropped (window out of memory)" << '\n';
+                std::cout << expected_seq << ' ' << seq << '\n';
+                std::abort();
+            }
 
-            //if (seq >= expected_seq + W) {
-            //    std::cout << "Packet dropped (window out of memory)" << '\n';
-            //    std::cout << expected_seq << ' ' << seq << '\n';
-            //    std::abort();
-            //}
+            if (seq == lost_packet) {
+                std::cout << "Packet Not lost, but ooo" << '\n';
+            }
 
-            //size_t offset = seq - expected_seq;
-            //size_t idx = (base + offset) % W;
+            size_t offset = seq - expected_seq;
+            size_t idx = (base + offset) % W;
 
-            //if (!reorder_ring[idx].present) {
-            //    reorder_ring[idx].data.assign(p, p + itch_len);
-            //    reorder_ring[idx].present = true;
-            //} else {
-            //    rte_pktmbuf_free(bufs[i]);
-            //    continue;
-            //}
+            if (!reorder_ring[idx].present) {
+                reorder_ring[idx].data.assign(p, p + itch_len);
+                reorder_ring[idx].present = true;
+            } else {
+                std::cout << "Strange" << '\n';
+                rte_pktmbuf_free(bufs[i]);
+                continue;
+            }
 
-            //while (reorder_ring[base].present) {
-            //    auto& data_vec = reorder_ring[base].data;
-            //    out.write(
-            //        reinterpret_cast<const char*>(data_vec.data()),
-            //        data_vec.size()
-            //    );
+            while (reorder_ring[base].present) {
+                auto& data_vec = reorder_ring[base].data;
+                out.write(
+                    reinterpret_cast<const char*>(data_vec.data()),
+                    data_vec.size()
+                );
 
-            //    reorder_ring[base].data.clear();
-            //    reorder_ring[base].present = false;
-            //    reorder_ring[base].msg_count = 0;
+                reorder_ring[base].data.clear();
+                reorder_ring[base].present = false;
+                reorder_ring[base].msg_count = 0;
 
-            //    expected_seq++;
-            //    base = (base + 1) % W;
-            //}
+                expected_seq++;
+                base = (base + 1) % W;
+            }
 
             total_size += itch_len;
             rte_pktmbuf_free(bufs[i]);
@@ -228,7 +234,16 @@ int main(int argc, char** argv) {
 
         uint64_t now = rte_get_timer_cycles();
         if (now - last_print > hz) {
-            std::cout << "Received ITCH: " << total_size << '\n';
+            int n = rte_eth_xstats_get_names(port_id, nullptr, 0);
+            std::vector<rte_eth_xstat_name> names(n);
+            rte_eth_xstats_get_names(port_id, names.data(), n);
+
+            std::vector<rte_eth_xstat> values(n);
+            rte_eth_xstats_get(port_id, values.data(), n);
+
+            for (int i = 0; i < n; ++i) {
+                //printf("%s = %" PRIu64 "\n", names[i].name, values[i].value);
+            }
             last_print = now;
         }
     }

@@ -99,8 +99,8 @@ if __name__ == "__main__":
         outdir + "parsing_and_order_book_latency_distribution.png"
     )
 
-    #plot_latency_distribution(
-    #    indir  + "parsing_lantecy_distribution.csv",
-    #    outdir + "parsing_lantecy_distribution.png"
-    #)
+    plot_latency_distribution(
+        indir  + "parsing_lantecy_distribution.csv",
+        outdir + "parsing_lantecy_distribution.png"
+    )
 
