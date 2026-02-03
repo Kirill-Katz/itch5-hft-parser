@@ -18,11 +18,13 @@ target_include_directories(itch_parser INTERFACE include)
 target_link_libraries(itch_parser INTERFACE absl::flat_hash_map)
 target_link_libraries(itch_parser INTERFACE benchmark::benchmark pthread)
 
-add_executable(benchmark src/main.cpp src/benchmarks/benchmark_utils.cpp)
+file(GLOB SRC_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.cpp")
+
+add_executable(benchmark ${SRC_FILES})
 target_link_libraries(benchmark PRIVATE itch_parser)
 target_link_libraries(benchmark PRIVATE ${DPDK_LIBRARIES})
 
-add_executable(perf_bench src/main.cpp src/benchmarks/benchmark_utils.cpp)
+add_executable(perf_bench ${SRC_FILES})
 target_link_libraries(perf_bench PRIVATE itch_parser)
 target_link_libraries(perf_bench PRIVATE ${DPDK_LIBRARIES})
 target_compile_definitions(perf_bench PRIVATE PERF)

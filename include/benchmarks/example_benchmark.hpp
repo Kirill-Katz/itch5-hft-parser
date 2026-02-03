@@ -8,6 +8,7 @@
 #include "itch_parser.hpp"
 #include "levels/vector_levels_b_search_split.hpp"
 #include "order_book.hpp"
+#include "order_book_shared.hpp"
 
 struct BenchmarkOrderBook {
     uint16_t target_stock_locate = -1;
@@ -22,6 +23,7 @@ struct BenchmarkOrderBook {
     void handle(const ITCH::OrderReplace&);
     void handle(const ITCH::SystemEvent&);
 
+    void handle_change(const OB::BestLvlChange& best_lvl_change);
     void handle_after();
     void handle_before();
     void reset();
@@ -44,6 +46,7 @@ struct BenchmarkOrderBook {
     BenchmarkOrderBook() {
         #ifndef PERF
         prices.reserve(60'000);
+        prices.push_back(0);
         #endif
     }
 };
@@ -66,15 +69,19 @@ inline void BenchmarkOrderBook::handle_after() {
     uint64_t t1 = __rdtscp(&aux_end);
     auto cycles = t1 - t0;
 
-    if (last_price != best_bid) {
-        prices.push_back(best_bid);
-        last_price = best_bid;
-    }
-
     if (touched) {
         latency_distribution[cycles]++;
     }
     #endif
+}
+
+inline void BenchmarkOrderBook::handle_change(const OB::BestLvlChange& best_lvl_change) {
+    touched = true;
+    total_messages++;
+
+    if (best_lvl_change.side == OB::Side::Bid && best_lvl_change.price != prices.back() && !prices.empty()) {
+        prices.push_back(best_lvl_change.price);
+    }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::SystemEvent& msg) {
@@ -95,56 +102,49 @@ inline void BenchmarkOrderBook::handle(const ITCH::StockDirectory& msg) {
 
 inline void BenchmarkOrderBook::handle(const ITCH::AddOrderNoMpid& msg) {
     if (msg.stock_locate == target_stock_locate) {
-        order_book.add_order(msg.order_reference_number, static_cast<OB::Side>(msg.buy_sell), msg.shares, msg.price);
-        touched = true;
-        total_messages++;
+        auto change = order_book.add_order(msg.order_reference_number, static_cast<OB::Side>(msg.buy_sell), msg.shares, msg.price);
+        handle_change(change);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::AddOrderMpid& msg) {
     if (msg.stock_locate == target_stock_locate) {
-        order_book.add_order(msg.order_reference_number, static_cast<OB::Side>(msg.buy_sell), msg.shares, msg.price);
-        touched = true;
-        total_messages++;
+        auto change = order_book.add_order(msg.order_reference_number, static_cast<OB::Side>(msg.buy_sell), msg.shares, msg.price);
+        handle_change(change);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderExecuted& msg) {
     if (msg.stock_locate == target_stock_locate) {
-        order_book.execute_order(msg.order_reference_number, msg.executed_shares);
-        touched = true;
-        total_messages++;
+        auto change = order_book.execute_order(msg.order_reference_number, msg.executed_shares);
+        handle_change(change);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderExecutedPrice& msg) {
     if (msg.stock_locate == target_stock_locate) {
-        order_book.execute_order(msg.order_reference_number, msg.executed_shares);
-        touched = true;
-        total_messages++;
+        auto change = order_book.execute_order(msg.order_reference_number, msg.executed_shares);
+        handle_change(change);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderCancel& msg) {
     if (msg.stock_locate == target_stock_locate) {
-        order_book.cancel_order(msg.order_reference_number, msg.cancelled_shares);
-        touched = true;
-        total_messages++;
+        auto change = order_book.cancel_order(msg.order_reference_number, msg.cancelled_shares);
+        handle_change(change);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderDelete& msg) {
     if (msg.stock_locate == target_stock_locate) {
-        order_book.delete_order(msg.order_reference_number);
-        touched = true;
-        total_messages++;
+        auto change = order_book.delete_order(msg.order_reference_number);
+        handle_change(change);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderReplace& msg) {
     if (msg.stock_locate == target_stock_locate) {
-        order_book.replace_order(msg.order_reference_number, msg.new_reference_number, msg.shares, msg.price);
-        touched = true;
-        total_messages++;
+        auto change = order_book.replace_order(msg.order_reference_number, msg.new_reference_number, msg.shares, msg.price);
+        handle_change(change);
     }
 }
