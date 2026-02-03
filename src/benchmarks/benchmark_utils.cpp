@@ -4,27 +4,6 @@
 #include <iostream>
 #include <x86intrin.h>
 
-std::pair<std::vector<std::byte>, size_t> init_benchmark(std::string filename) {
-    std::ifstream file(filename, std::ios::binary);
-    if (!file) {
-        std::cerr << "Failed to open file\n";
-        return {};
-    }
-
-    std::vector<std::byte> src_buf;
-    src_buf.resize(3LL * 1024 * 1024 * 1024);
-
-    file.read(reinterpret_cast<char*>(src_buf.data()), src_buf.size());
-    size_t bytes_read = size_t(file.gcount());
-
-    if (bytes_read < 3) {
-        std::cerr << "File read too small\n";
-        return {};
-    }
-
-    return {src_buf, bytes_read};
-}
-
 pid_t run_perf_report() {
     pid_t pid = fork();
     if (pid == 0) {

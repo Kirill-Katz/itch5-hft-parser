@@ -1,5 +1,7 @@
 data/*
 results/*
 build/
+build-perf/
+build-asan/
 .cache/
 

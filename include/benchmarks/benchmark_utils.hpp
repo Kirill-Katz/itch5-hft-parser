@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <fstream>
 
-std::pair<std::vector<std::byte>, size_t> init_benchmark(std::string filename);
 pid_t run_perf_report();
 pid_t run_perf_stat();
 uint64_t calibrate_tsc();

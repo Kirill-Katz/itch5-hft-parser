@@ -103,17 +103,12 @@ int main(int argc, char** argv) {
     std::string filepath;
     std::string outdir;
 
-    if (argc != 3) {
+    if (argc != 2) {
         std::cout << "Please specify the file to parse and an output directory" << '\n';
         return 1;
     }
 
-    filepath = argv[1];
-    outdir   = argv[2];
-
-    auto [src_buf, bytes_read] = init_benchmark(filepath);
-    const std::byte* src = src_buf.data();
-    size_t len = bytes_read;
+    outdir = argv[1];
 
     //std::thread noise(allocator_noise);
 
@@ -122,11 +117,6 @@ int main(int argc, char** argv) {
     BenchmarkParsing parsing_bm_handler;
 
     rte_mbuf* bufs[64];
-
-    std::ofstream out("../data/itch_out",
-                  std::ios::binary | std::ios::out | std::ios::trunc);
-    std::vector<char> buf;
-    buf.reserve(1<<20);
 
     rte_eth_stats stats{};
     uint64_t last_print = rte_get_timer_cycles();
@@ -169,11 +159,6 @@ int main(int argc, char** argv) {
             msgs += msg_count;
             size_t itch_len = rte_be_to_cpu_16(udp->dgram_len) - sizeof(rte_udp_hdr) - 20;
 
-            if (rte_be_to_cpu_16(udp->dgram_len) + sizeof(rte_ipv4_hdr) + sizeof(rte_ether_hdr) != m->pkt_len) {
-                std::cout << rte_be_to_cpu_16(udp->dgram_len) + sizeof(rte_ipv4_hdr) + sizeof(rte_ether_hdr) << ' ' << m->pkt_len << '\n';
-                throw std::runtime_error("Something went wrong, pkt length doesn't match expected length");
-            }
-
             parser.parse(p, itch_len, ob_bm_handler);
             total_size += itch_len;
         }
@@ -191,13 +176,11 @@ int main(int argc, char** argv) {
     }
 
     #ifndef PERF
-    //export_latency_distribution_csv(ob_bm_handler, outdir + "parsing_latency_distribution.csv");
     export_latency_distribution_csv(ob_bm_handler, outdir + "parsing_and_order_book_latency_distribution.csv");
     export_prices_csv(ob_bm_handler.prices, outdir);
     #endif
 
     run_noise = false;
-    //noise.join();
 
     return 0;
 }
