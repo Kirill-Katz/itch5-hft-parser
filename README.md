@@ -64,10 +64,10 @@ The ITCH file can be downloaded here: https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/
 
 # Results
 
-The results were obtained on a pinned p-core of an i7-12700h CPU using `taskset -c 1` with turbo boost on (4.653Ghz peak) with Hyper Threading on and the CPU frequency scaling governor set to performance on an idle machine. The machine is an Asus ROG Zephyrus M16 GU603ZM_GU603ZM. The OS is Ubuntu 24.04.3 LTS with an unmodified Linux 6.14.0-37-generic kernel. Compiled with g++ 13.3.0 with -DNDEBUG -O3 -march=native flags. Latency measured using the `rdtscp` instruction and then converted into ns by estimating its frequence. The order book results were obtained on the first 3GB of the above mentioned file on the Nvidia stock messages using the `include/levels/vector_level_b_search.hpp` implementation. The results for the parser benchmark were obtained on all types of ITCH messages on the same first 3GB of the file.
+The results were obtained on a pinned p-core of an i7-12700h CPU using `taskset -c 1` with turbo boost on (4.653Ghz peak) with Hyper Threading off and the CPU frequency scaling governor set to performance on an idle machine. The machine is an Asus ROG Zephyrus M16 GU603ZM_GU603ZM. The OS is Ubuntu 24.04.3 LTS with an unmodified Linux 6.14.0-37-generic kernel. Compiled with g++ 13.3.0 with -DNDEBUG -O3 -march=native flags. Latency measured using the `rdtscp` instruction and then converted into ns by estimating its frequence. The order book results were obtained on the first 3GB of the above mentioned file on the Nvidia stock messages using the `include/levels/vector_level_b_search.hpp` implementation. The results for the parser benchmark were obtained on all types of ITCH messages on the same first 3GB of the file.
 
 ### ITCH parsing directly from RX + Order Book Updates Latency Distribution
-<img width="3000" height="1800" alt="parsing_and_order_book_latency_distribution" src="https://github.com/user-attachments/assets/4b40f8d8-ba26-483e-9db6-edfb2d43097f" />
+<img width="3000" height="1800" alt="parsing_and_order_book_latency_distribution" src="https://github.com/user-attachments/assets/38eafe56-7405-47a8-a838-f596b70de248" />
 
 
 **Latency spikes every 3ns are caused by the use of rdtsc with an lfence for timing (0.3ns per cycle on my machine). The following instruction returns the latency in cpu cycles and then converting cycles to ns causes the latency spikes. You could easily swap out rdtsc with a high resolution clock, but that would increase the latencies by ~10ns across the board.**
