@@ -66,6 +66,7 @@ inline void BenchmarkOrderBook::handle_after() {
     #endif
 
     #ifndef PERF
+    _mm_lfence();
     uint64_t t1 = __rdtscp(&aux_end);
     auto cycles = t1 - t0;
 

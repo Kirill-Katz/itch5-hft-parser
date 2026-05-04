@@ -60,7 +60,7 @@ inline Level HeapLevels<S>::best() {
         uint32_t price = heap.top();
         auto it = qty_by_price.find(price);
         if (it != qty_by_price.end() && it->second) {
-            return Level{ price, it->second };
+            return Level{ it->second, price };
         }
         heap.pop();
     }

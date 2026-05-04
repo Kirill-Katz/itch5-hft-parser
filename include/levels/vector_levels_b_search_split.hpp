@@ -34,6 +34,7 @@ inline Level VectorLevelBSearchSplit<S>::best() const {
 
 template<Side S>
 inline BestLvlChange VectorLevelBSearchSplit<S>::remove(Level level) {
+    const size_t old_size = prices.size();
     auto it = std::lower_bound(
         prices.begin(), prices.end(), level.price,
         [](uint32_t lhs, uint32_t price) {
@@ -47,7 +48,7 @@ inline BestLvlChange VectorLevelBSearchSplit<S>::remove(Level level) {
 
     UNEXPECTED(it == prices.end() || *it != level.price, "Remove didn't find a level");
     size_t idx = it - prices.begin();
-    bool best_changed = (prices.size() - 1) == idx;
+    bool best_changed = idx + 1 == old_size;
 
     UNEXPECTED(level.qty > qtys[idx], "Remove underflow");
 
@@ -57,17 +58,30 @@ inline BestLvlChange VectorLevelBSearchSplit<S>::remove(Level level) {
         qtys.erase(qtys.begin() + idx);
     }
 
-    return best_changed ? BestLvlChange{
+    if (!best_changed) {
+        return BestLvlChange{};
+    }
+
+    if (prices.empty()) {
+        return BestLvlChange{
+            .qty = 0,
+            .price = 0,
+            .side = S
+        };
+    }
+
+    return BestLvlChange{
         .qty = qtys.back(),
         .price = prices.back(),
         .side = S
-    } : BestLvlChange{}; // return empty object as "no" change
+    }; // return empty object as "no" change
     // no std::option used, because it provably doesn't return in registers
     // 0 for Side is defined as Side::None
 }
 
 template<Side S>
 inline BestLvlChange VectorLevelBSearchSplit<S>::add(Level level) {
+    const size_t old_size = prices.size();
     auto it = std::lower_bound(
         prices.begin(), prices.end(), level.price,
         [](uint32_t lhs, uint32_t price) {
@@ -80,7 +94,7 @@ inline BestLvlChange VectorLevelBSearchSplit<S>::add(Level level) {
     );
 
     size_t idx = it - prices.begin();
-    bool best_changed = idx == (prices.size() - 1);
+    bool best_changed = old_size == 0 || idx + 1 >= old_size;
 
     if (it != prices.end() && *it == level.price) {
         qtys[idx] += level.qty;
@@ -98,4 +112,3 @@ inline BestLvlChange VectorLevelBSearchSplit<S>::add(Level level) {
 }
 
 }
-

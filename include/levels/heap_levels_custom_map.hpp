@@ -59,7 +59,7 @@ inline Level HeapLevelsCustomMap<S>::best() {
         uint32_t price = heap.top();
         uint64_t* qty = qty_by_price.find(price);
         if (qty != nullptr && *qty) {
-            return Level{ price, *qty };
+            return Level{ *qty, price };
         }
         heap.pop();
     }

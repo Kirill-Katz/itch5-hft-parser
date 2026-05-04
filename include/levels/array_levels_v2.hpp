@@ -75,8 +75,7 @@ inline void ArrayLevelsV2<S>::remove(Level level) {
 template<Side S>
 inline Level ArrayLevelsV2<S>::best() {
     auto qty = book[best_idx];
-    return {best_idx, qty};
+    return {qty, best_idx};
 }
 
 }
-

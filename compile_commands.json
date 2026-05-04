@@ -1,32 +1,38 @@
 [
 {
   "directory": "/home/alderson/Projects/Mine/itch-5.0-parser/build",
-  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -std=gnu++20 -o CMakeFiles/parser_bench.dir/benchmark/main.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/benchmark/main.cpp",
-  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/benchmark/main.cpp",
-  "output": "CMakeFiles/parser_bench.dir/benchmark/main.cpp.o"
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -DNDEBUG -O3 -march=native -g -std=gnu++20 -o CMakeFiles/benchmark.dir/src/benchmarks/benchmark_utils.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/benchmarks/benchmark_utils.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/src/benchmarks/benchmark_utils.cpp",
+  "output": "CMakeFiles/benchmark.dir/src/benchmarks/benchmark_utils.cpp.o"
 },
 {
   "directory": "/home/alderson/Projects/Mine/itch-5.0-parser/build",
-  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -std=gnu++20 -o CMakeFiles/parser_bench.dir/src/utils.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/utils.cpp",
-  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/src/utils.cpp",
-  "output": "CMakeFiles/parser_bench.dir/src/utils.cpp.o"
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -DNDEBUG -O3 -march=native -g -std=gnu++20 -o CMakeFiles/benchmark.dir/src/dpdk_context.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/dpdk_context.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/src/dpdk_context.cpp",
+  "output": "CMakeFiles/benchmark.dir/src/dpdk_context.cpp.o"
 },
 {
   "directory": "/home/alderson/Projects/Mine/itch-5.0-parser/build",
-  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -std=gnu++20 -o CMakeFiles/parser_bench.dir/benchmark/bm_parser_v1.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/benchmark/bm_parser_v1.cpp",
-  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/benchmark/bm_parser_v1.cpp",
-  "output": "CMakeFiles/parser_bench.dir/benchmark/bm_parser_v1.cpp.o"
-},
-{
-  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser/build",
-  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -std=gnu++20 -o CMakeFiles/parser_bench.dir/benchmark/bm_parser_v2.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/benchmark/bm_parser_v2.cpp",
-  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/benchmark/bm_parser_v2.cpp",
-  "output": "CMakeFiles/parser_bench.dir/benchmark/bm_parser_v2.cpp.o"
-},
-{
-  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser/build",
-  "command": "/usr/lib/ccache/c++  -I/opt/intel/oneapi/vtune/latest/sdk/include -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -O3 -march=native -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -std=gnu++20 -o CMakeFiles/test.dir/src/main.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/main.cpp",
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -DNDEBUG -O3 -march=native -g -std=gnu++20 -o CMakeFiles/benchmark.dir/src/main.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/main.cpp",
   "file": "/home/alderson/Projects/Mine/itch-5.0-parser/src/main.cpp",
-  "output": "CMakeFiles/test.dir/src/main.cpp.o"
+  "output": "CMakeFiles/benchmark.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser/build",
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -DPERF -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -DNDEBUG -O3 -march=native -g -std=gnu++20 -o CMakeFiles/perf_bench.dir/src/benchmarks/benchmark_utils.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/benchmarks/benchmark_utils.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/src/benchmarks/benchmark_utils.cpp",
+  "output": "CMakeFiles/perf_bench.dir/src/benchmarks/benchmark_utils.cpp.o"
+},
+{
+  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser/build",
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -DPERF -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -DNDEBUG -O3 -march=native -g -std=gnu++20 -o CMakeFiles/perf_bench.dir/src/dpdk_context.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/dpdk_context.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/src/dpdk_context.cpp",
+  "output": "CMakeFiles/perf_bench.dir/src/dpdk_context.cpp.o"
+},
+{
+  "directory": "/home/alderson/Projects/Mine/itch-5.0-parser/build",
+  "command": "/usr/lib/ccache/c++ -DBENCHMARK_STATIC_DEFINE -DPERF -I/home/alderson/Projects/Mine/itch-5.0-parser/include -O3 -DNDEBUG -DNDEBUG -O3 -march=native -g -std=gnu++20 -o CMakeFiles/perf_bench.dir/src/main.cpp.o -c /home/alderson/Projects/Mine/itch-5.0-parser/src/main.cpp",
+  "file": "/home/alderson/Projects/Mine/itch-5.0-parser/src/main.cpp",
+  "output": "CMakeFiles/perf_bench.dir/src/main.cpp.o"
 }
 ]
