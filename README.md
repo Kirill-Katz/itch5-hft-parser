@@ -38,14 +38,18 @@ make
 If you want to get the .csv files with latency numbers and recorded best bids then run this:
 
 ```
-sudo ./benchmark   --proc-type=primary --file-prefix=memif_cli   --vdev=net_memif0,socket=/tmp/memif2.sock,id=0,role=client,zero-copy=yes,rsize=14 --single-file-segments   --log-level=pmd.net.memif,8 [ITCH file path] [results directory]
+sudo taskset -c 2 ./benchmark   --proc-type=primary --file-prefix=memif_cli   --vdev=net_memif0,socket=/tmp/memif2.sock,id=0,role=server,rsize=9  -l 2  --no-pci  [results directory]
+```
+In order for this to work you would also need the to clone the [replay engine](https://github.com/Kirill-Katz/itch-replay-engine) which wills stream the ITCH file throught DPDK to this ingestion engine. 
+After you built the replay engine you can run it like this:
+
+```
+sudo taskset -c 3 ./run  --proc-type=primary --file-prefix=memif_srv  --vdev=net_memif0,socket=/tmp/memif2.sock,id=0,role=client,rsize=9,zero-copy=yes --single-file-segments -l 3 --no-pci  [path to ITCH file]
 ```
 
-If you want to run it in perf mode (latency is NOT recorded to have as little data pollution as possible) then run this:
+After the replay engine has been started you should see the ingetion engine receiving packets:
 
-```
-./perf_benc [path to the ITCH file] [results directory]
-```
+<img width="295" height="875" alt="image" src="https://github.com/user-attachments/assets/330a25b0-aa87-4fbe-a608-57f88bca3b02" />
 
 # How to analyze?
 First install matplotlib by running:
