@@ -3,28 +3,25 @@ import matplotlib.pyplot as plt
 import sys
 
 def plot_prices(infile, outfile):
+    times = []
     prices = []
 
     with open(infile, newline="") as f:
         reader = csv.DictReader(f)
 
-        skipped = 0
         for row in reader:
-            # skipping the first 50 best bids, because at the start of the trading day
-            # they start very low prices which breaks the plotting of the graph by introducing a
-            # huge spike, after the first 50 ticks the bids normalize
-            if skipped < 50:
-                skipped += 1
-                continue
+            timestamp = int(row["timestamp"])
+            price = int(row["price"])
 
-            if int(row["price"]) != 0:
-                prices.append(int(row["price"]) / 10_000)
+            if price != 0:
+                times.append(timestamp / 1_000_000_000 / 3600)
+                prices.append(price / 10_000)
 
     plt.figure()
-    plt.plot(prices)
-    plt.xlabel("Index")
+    plt.plot(times, prices)
+    plt.xlabel("Hours Since Midnight")
     plt.ylabel("Price")
-    plt.title("Price Distribution")
+    plt.title("Best Bid Price")
     plt.grid(True)
 
     plt.tight_layout()

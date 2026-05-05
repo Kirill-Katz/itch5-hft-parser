@@ -2,11 +2,9 @@
 
 #include <cstdint>
 #include <absl/container/flat_hash_map.h>
-#include <emmintrin.h>
 #include <benchmark/benchmark.h>
-#include <x86intrin.h>
-#include <iostream>
 #include "itch_parser.hpp"
+#include "benchmarks/benchmark_utils.hpp"
 
 template<typename T>
 inline void consume(T msg) {
@@ -47,23 +45,20 @@ struct BenchmarkParsing {
 
     absl::flat_hash_map<uint64_t, uint64_t> latency_distribution;
     uint64_t total_messages = 0;
-    unsigned aux_start, aux_end;
-
     uint64_t t0;
 };
 
 inline void BenchmarkParsing::handle_before() {
     std::atomic_signal_fence(std::memory_order_seq_cst);
-    t0 = __rdtscp(&aux_start);
+    t0 = monotonic_raw_ns();
 }
 
 inline void BenchmarkParsing::handle_after() {
-    _mm_lfence();
-    uint64_t t1 = __rdtscp(&aux_end);
+    uint64_t t1 = monotonic_raw_ns();
     std::atomic_signal_fence(std::memory_order_seq_cst);
 
-    auto cycles = t1 - t0;
-    latency_distribution[cycles]++;
+    auto latency_ns = t1 - t0;
+    latency_distribution[latency_ns]++;
     total_messages++;
 }
 

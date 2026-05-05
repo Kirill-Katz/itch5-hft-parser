@@ -3,9 +3,8 @@
 #include <benchmark/benchmark.h>
 #include <cstdint>
 #include <absl/container/flat_hash_map.h>
-#include <emmintrin.h>
-#include <x86intrin.h>
 #include "itch_parser.hpp"
+#include "benchmarks/benchmark_utils.hpp"
 #include "levels/vector_levels_b_search_split.hpp"
 #include "order_book.hpp"
 #include "order_book_shared.hpp"
@@ -23,7 +22,7 @@ struct BenchmarkOrderBook {
     void handle(const ITCH::OrderReplace&);
     void handle(const ITCH::SystemEvent&);
 
-    void handle_change(const OB::BestLvlChange& best_lvl_change);
+    void handle_change(const OB::BestLvlChange& best_lvl_change, uint64_t timestamp);
     void handle_after();
     void handle_before();
     void reset();
@@ -34,14 +33,12 @@ struct BenchmarkOrderBook {
     absl::flat_hash_map<uint64_t, uint64_t> latency_distribution;
 
     uint64_t total_messages = 0;
-    unsigned aux_start, aux_end;
-
     uint64_t t0;
 
     bool last_message = false;
+    bool record_prices = false;
 
-    uint32_t last_price = 0;
-    std::vector<uint32_t> prices;
+    std::vector<std::pair<uint64_t, uint32_t>> prices;
 
     bool should_stop() {
         return last_message;
@@ -50,7 +47,7 @@ struct BenchmarkOrderBook {
     BenchmarkOrderBook() {
         #ifndef PERF
         prices.reserve(60'000);
-        prices.push_back(0);
+        prices.push_back({0, 0});
         #endif
     }
 };
@@ -58,7 +55,7 @@ struct BenchmarkOrderBook {
 inline void BenchmarkOrderBook::handle_before() {
     #ifndef PERF
     touched = false;
-    t0 = __rdtscp(&aux_start);
+    t0 = monotonic_raw_ns();
     #endif
 }
 
@@ -70,30 +67,35 @@ inline void BenchmarkOrderBook::handle_after() {
     #endif
 
     #ifndef PERF
-    _mm_lfence();
-    uint64_t t1 = __rdtscp(&aux_end);
-    auto cycles = t1 - t0;
+    uint64_t t1 = monotonic_raw_ns();
+    auto latency_ns = t1 - t0;
 
     if (touched) {
-        latency_distribution[cycles]++;
+        latency_distribution[latency_ns]++;
     }
     #endif
 }
 
-inline void BenchmarkOrderBook::handle_change(const OB::BestLvlChange& best_lvl_change) {
+inline void BenchmarkOrderBook::handle_change(const OB::BestLvlChange& best_lvl_change, uint64_t timestamp) {
     touched = true;
     total_messages++;
 
-    if (best_lvl_change.side == OB::Side::Bid && best_lvl_change.price != prices.back() && !prices.empty()) {
-        prices.push_back(best_lvl_change.price);
+    if (record_prices && best_lvl_change.side == OB::Side::Bid && !prices.empty() && best_lvl_change.price != prices.back().second) {
+        prices.push_back({timestamp, best_lvl_change.price});
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::SystemEvent& msg) {
-    if (msg.event_code == 'C') {
+    if (msg.event_code == 'C') { // last message
         touched = true;
         last_message = true;
         total_messages++;
+    } else if (msg.event_code == 'Q') { // start of market hours
+        record_prices = true;
+        touched = true;
+    } else if (msg.event_code == 'M') { // end of market hours
+        record_prices = false;
+        touched = true;
     }
 }
 
@@ -108,48 +110,48 @@ inline void BenchmarkOrderBook::handle(const ITCH::StockDirectory& msg) {
 inline void BenchmarkOrderBook::handle(const ITCH::AddOrderNoMpid& msg) {
     if (msg.stock_locate == target_stock_locate) {
         auto change = order_book.add_order(msg.order_reference_number, static_cast<OB::Side>(msg.buy_sell), msg.shares, msg.price);
-        handle_change(change);
+        handle_change(change, msg.timestamp);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::AddOrderMpid& msg) {
     if (msg.stock_locate == target_stock_locate) {
         auto change = order_book.add_order(msg.order_reference_number, static_cast<OB::Side>(msg.buy_sell), msg.shares, msg.price);
-        handle_change(change);
+        handle_change(change, msg.timestamp);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderExecuted& msg) {
     if (msg.stock_locate == target_stock_locate) {
         auto change = order_book.execute_order(msg.order_reference_number, msg.executed_shares);
-        handle_change(change);
+        handle_change(change, msg.timestamp);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderExecutedPrice& msg) {
     if (msg.stock_locate == target_stock_locate) {
         auto change = order_book.execute_order(msg.order_reference_number, msg.executed_shares);
-        handle_change(change);
+        handle_change(change, msg.timestamp);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderCancel& msg) {
     if (msg.stock_locate == target_stock_locate) {
         auto change = order_book.cancel_order(msg.order_reference_number, msg.cancelled_shares);
-        handle_change(change);
+        handle_change(change, msg.timestamp);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderDelete& msg) {
     if (msg.stock_locate == target_stock_locate) {
         auto change = order_book.delete_order(msg.order_reference_number);
-        handle_change(change);
+        handle_change(change, msg.timestamp);
     }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::OrderReplace& msg) {
     if (msg.stock_locate == target_stock_locate) {
         auto change = order_book.replace_order(msg.order_reference_number, msg.new_reference_number, msg.shares, msg.price);
-        handle_change(change);
+        handle_change(change, msg.timestamp);
     }
 }

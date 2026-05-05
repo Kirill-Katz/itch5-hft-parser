@@ -1,0 +1,107 @@
+#pragma once
+
+#include <atomic>
+#include <memory>
+#include <cstring>
+#include "order_book_shared.hpp"
+
+template<typename T>
+concept QueueMsg =
+    std::is_trivially_copyable_v<T> &&
+    std::is_trivially_destructible_v<T>;
+
+template<QueueMsg T>
+class SPMCQueue {
+public:
+    SPMCQueue() {};
+    SPMCQueue(const SPMCQueue&) = delete;
+    SPMCQueue(SPMCQueue&&) = delete;
+
+    SPMCQueue& operator=(const SPMCQueue&) = delete;
+    SPMCQueue& operator=(SPMCQueue&&) = delete;
+
+    using VersionT = uint64_t;
+    struct alignas(64) Slot {
+        std::atomic<VersionT> version{0};
+        T data;
+    };
+
+    // alignas on this class is mandatory otherwise it causes
+    // hard to debug false sharing
+    class alignas(64) Consumer {
+        public:
+            bool pop(T& dst);
+
+            Consumer(const Consumer&) = delete;
+            Consumer(Consumer&&) = default;
+
+            Consumer& operator=(const Consumer&) = delete;
+            Consumer& operator=(Consumer&&) = default;
+
+        private:
+            friend class SPMCQueue;
+            explicit Consumer(SPMCQueue& q)
+            : queue{q},
+              reader{q.writer.load(std::memory_order_acquire)}
+            {}
+
+            alignas(64) uint64_t reader;
+            SPMCQueue& queue;
+    };
+
+    void push(const T&);
+    Consumer make_consumer() {
+        return Consumer{*this};
+    }
+
+private:
+    // number of slots that fit in 8MB
+    constexpr static uint64_t buffer_size {8 * 1024 * 1024 / sizeof(Slot)};
+    constexpr static uint64_t wrap_mask {buffer_size - 1};
+
+    alignas(64) std::atomic<uint64_t> writer{0};
+    std::unique_ptr<Slot[]> buffer = std::make_unique<Slot[]>(buffer_size);
+
+    static_assert(std::popcount(buffer_size) == 1);
+};
+
+template<QueueMsg T>
+inline void SPMCQueue<T>::push(const T& val) {
+    uint64_t w = writer.load(std::memory_order_relaxed);
+    auto& slot = buffer[w & wrap_mask];
+    auto slot_ver = slot.version.load(std::memory_order_acquire);
+
+    slot.version.store(slot_ver + 1, std::memory_order_relaxed);
+    slot.data = val;
+    slot.version.store(slot_ver + 2, std::memory_order_release);
+
+    writer.store(w + 1, std::memory_order_release);
+}
+
+template<QueueMsg T>
+inline bool SPMCQueue<T>::Consumer::pop(T& dst) {
+    uint64_t r_idx = (reader & wrap_mask);
+    uint64_t gen = reader >> std::countr_zero(buffer_size);
+
+    uint64_t expected_version = 2 * (gen + 1);
+
+    auto& slot = queue.buffer[r_idx];
+    auto v1 = slot.version.load(std::memory_order_relaxed);
+
+    OB::UNEXPECTED(v1 > expected_version, "Consumer was overun before trying to pop.");
+    if (v1 < expected_version) {
+        return false;
+    }
+
+    // this is UB, because it is a data-race by the C++ standard
+    // this is deliberate and it is not portable, but it does work on x86
+    T temp = queue.buffer[r_idx].data;
+
+    auto v2 = slot.version.load(std::memory_order_acquire);
+    OB::UNEXPECTED(v2 != expected_version, "Consumer was overun while popping.");
+
+    dst = temp;
+    reader++;
+
+    return true;
+}

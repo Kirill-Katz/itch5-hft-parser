@@ -4,9 +4,12 @@ project(ITCH LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
+endif()
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG -O3 -march=native -g")
-set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
 
 find_package(absl REQUIRED)
 find_package(benchmark REQUIRED)
@@ -23,8 +26,16 @@ file(GLOB SRC_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" "$
 add_executable(benchmark ${SRC_FILES})
 target_link_libraries(benchmark PRIVATE itch_parser)
 target_link_libraries(benchmark PRIVATE ${DPDK_LIBRARIES})
+target_compile_options(benchmark PRIVATE
+    $<$<CONFIG:Release>:-O3 -march=native>
+    $<$<CONFIG:RelWithDebInfo>:-O3 -march=native -g>
+)
 
 add_executable(perf_bench ${SRC_FILES})
 target_link_libraries(perf_bench PRIVATE itch_parser)
 target_link_libraries(perf_bench PRIVATE ${DPDK_LIBRARIES})
 target_compile_definitions(perf_bench PRIVATE PERF)
+target_compile_options(perf_bench PRIVATE
+    $<$<CONFIG:Release>:-O3 -march=native>
+    $<$<CONFIG:RelWithDebInfo>:-O3 -march=native -g>
+)

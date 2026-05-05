@@ -27,10 +27,15 @@ struct BestLvlChange {
     Side side;
 };
 
-[[gnu::noinline]] static void UNEXPECTED(bool condition, std::string_view message) {
-    if (condition) {
-        std::cerr << message << '\n';
-        std::abort();
+[[gnu::cold, gnu::noinline]]
+static void abort_unexpected(std::string_view message) {
+    std::cerr << message << '\n';
+    std::abort();
+}
+
+static inline void UNEXPECTED(bool condition, std::string_view message) {
+    if (__builtin_expect(condition, false)) {
+        abort_unexpected(message);
     }
 }
 }

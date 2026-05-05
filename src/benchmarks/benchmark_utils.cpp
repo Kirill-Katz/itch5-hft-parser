@@ -74,18 +74,18 @@ uint64_t calibrate_tsc() {
 }
 
 void export_prices_csv(
-    const std::vector<uint32_t>& prices,
+    const std::vector<std::pair<uint64_t, uint32_t>>& prices,
     std::string outdir
 ) {
-    std::vector<uint32_t> data = prices;
+    std::vector<std::pair<uint64_t, uint32_t>> data = prices;
 
     std::ofstream out(outdir + "prices.csv");
     if (!out) {
         std::abort();
     }
 
-    out << "price\n";
-    for (uint32_t price : data) {
-        out << price << "\n";
+    out << "timestamp,price\n";
+    for (const auto& [timestamp, price] : data) {
+        out << timestamp << "," << price << "\n";
     }
 }

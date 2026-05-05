@@ -2,6 +2,8 @@ import csv
 import matplotlib.pyplot as plt
 import sys
 
+MAX_PLOT_LATENCY_NS = 2_000
+
 def weighted_percentile(latencies, counts, percentile):
     total = sum(counts)
     threshold = total * percentile
@@ -36,13 +38,12 @@ def plot_latency_distribution(infile, outfile):
     total_count = sum(counts)
     avg_latency = sum(l * c for l, c in zip(latencies, counts)) / total_count
 
-    data = [(l, c) for l, c in data if l <= 200]
-    if not data:
-        raise RuntimeError("No data <= 1000 ns")
+    plot_data = [(latency, count) for latency, count in zip(latencies, counts) if latency <= MAX_PLOT_LATENCY_NS]
+    if not plot_data:
+        raise RuntimeError(f"No data <= {MAX_PLOT_LATENCY_NS} ns")
 
-    latencies, counts = zip(*data)
     buckets = {}
-    for latency, count in zip(latencies, counts):
+    for latency, count in plot_data:
         buckets[latency] = buckets.get(latency, 0) + count
 
     bx = sorted(buckets.keys())
@@ -53,7 +54,7 @@ def plot_latency_distribution(infile, outfile):
 
     plt.xlabel("Latency bucket (ns)")
     plt.ylabel("Count")
-    plt.title("Latency Distribution (≤ 1000 ns)")
+    plt.title(f"Latency Distribution (<= {MAX_PLOT_LATENCY_NS} ns)")
 
     text = (
         f"avg = {avg_latency:.2f} ns\n"
@@ -95,12 +96,11 @@ if __name__ == "__main__":
     outdir = sys.argv[2];
 
     plot_latency_distribution(
-        indir  + "parsing_and_order_book_latency_distribution.csv",
-        outdir + "parsing_and_order_book_latency_distribution.png"
+        indir  + "parsing_and_order_book_latency_distribution_strategy_aapl.csv",
+        outdir + "parsing_and_order_book_latency_distribution_strategy_aapl.png"
     )
 
     plot_latency_distribution(
-        indir  + "parsing_latency_distribution.csv",
-        outdir + "parsing_latency_distribution.png"
+        indir  + "parsing_and_order_book_latency_distribution_strategy_nvda.csv",
+        outdir + "parsing_and_order_book_latency_distribution_strategy_nvda.png"
     )
-
